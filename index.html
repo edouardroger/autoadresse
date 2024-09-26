@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr" data-fr-scheme="system">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Autocomplétion d'adresse postale</title>
+    <link href="
+    https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12/dist/dsfr.min.css
+    " rel="stylesheet">
+    <style>
+        .suggestions {
+            border: 1px solid var(--background-contrast-grey-active);
+            border-top: 0;
+            max-width: 300px;
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .suggestions li {
+            padding: 10px;
+            cursor: pointer;
+            border-top: 1px solid var(--background-contrast-grey-active);
+        }
+
+        .suggestions {
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+
+        .suggestions li[aria-selected="true"],
+        .suggestions li:hover {
+            background-color: var(--background-open-blue-france);
+        }
+    </style>
+</head>
+
+<body>
+    <header role="banner" class="fr-header">
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <p class="fr-logo"> République<br />française</p>
+                            </div>
+                        </div>
+                        <div class="fr-header__service"> <a href="/" title="Accueil - Impots.gouv.fr">
+                                <p class="fr-header__service-title">Impots.gouv.fr</p>
+                            </a>
+                            <p class="fr-header__service-tagline">Gestion de l'adresse postale</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="fr-container">
+        <div class="fr-grid-row fr-grid-row--gutters">
+            <section class="fr-col-12 fr-col-md-8 fr-col-lg-6 fr-mt-3w">
+                <h1 class="fr-h3">Autocomplétion d'adresse postale</h1>
+                <form id="adresse_form">
+                    <label for="adresse" class="fr-label">Votre adresse postale</label>
+                    <input role="combobox" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false"
+                        type="text" class="fr-input" id="adresse" name="adresse" autocomplete="off"
+                        aria-activedescendant="" oninput="getAdresseSuggestions(this.value)"
+                        onkeydown="handleKeyDown(event)" />
+                    <ul role="listbox" class="suggestions fr-hidden" id="suggestions"></ul>
+                    <h2 class="fr-sr-only">Résultat : </h2>
+                    <div id="address-details" class="address-details fr-mt-3w"></div>
+                </form>
+            </section>
+        </div>
+    </main>
+    <script>
+        document.getElementById("adresse_form").addEventListener("submit", function (event) {
+            event.preventDefault()
+        });
+        let activeIndex = -1;
+        let currentAddresses = []; // Variable pour stocker les adresses récupérées depuis l'API
+
+        async function getAdresseSuggestions(query) {
+            const suggestionsElement = document.getElementById('suggestions');
+            const combobox = document.querySelector('[role="combobox"]');
+            const input = document.getElementById('adresse');
+            const regex = /\S+\s+\S+/;
+
+            if (!regex.test(query) || query.length < 3) { // Commence la recherche après saisie d'au moins 3 caractères et d'une espace suivie d'un caractère
+                suggestionsElement.innerHTML = '';
+                combobox.setAttribute('aria-expanded', 'false');
+                suggestionsElement.classList.add('fr-hidden');
+                return;
+            }
+
+            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            currentAddresses = data.features; // Stocke les adresses récupérées
+
+            suggestionsElement.innerHTML = ''; // Vider les suggestions précédentes
+            activeIndex = -1; // Reset de l'index actif
+
+            if (data && data.features.length > 0) {
+                data.features.forEach((feature, index) => {
+                    const li = document.createElement('li');
+                    li.setAttribute('role', 'option');
+                    li.setAttribute('id', `suggestion-${index}`);
+                    li.textContent = feature.properties.label;
+                    li.onclick = function () {
+                        selectAddress(index);
+                    };
+                    suggestionsElement.appendChild(li);
+                });
+
+                // Affiche la liste de suggestions
+                combobox.setAttribute('aria-expanded', 'true');
+                suggestionsElement.classList.remove('fr-hidden');
+            } else {
+                combobox.setAttribute('aria-expanded', 'false');
+                suggestionsElement.classList.add('fr-hidden');
+            }
+        }
+
+        function handleKeyDown(event) {
+            const suggestions = document.querySelectorAll('[role="option"]');
+            const input = document.getElementById('adresse');
+            const suggestionsElement = document.getElementById('suggestions');
+
+            if (suggestions.length > 0) {
+                if (event.key === 'ArrowDown') {
+                    // Navigation vers le bas
+                    activeIndex = (activeIndex + 1) % suggestions.length;
+                    setActiveDescendant(suggestions);
+                } else if (event.key === 'ArrowUp') {
+                    // Navigation vers le haut
+                    activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+                    setActiveDescendant(suggestions);
+                } else if (event.key === 'Enter') {
+                    // Sélection de l'élément actif avec la touche Entrée
+                    if (activeIndex >= 0) {
+                        selectAddress(activeIndex);
+                    }
+                } else if (event.key === 'Escape') {
+                    // Fermer la liste sur Échappement
+                    suggestionsElement.innerHTML = '';
+                    suggestionsElement.classList.add('fr-hidden');
+                    activeIndex = -1;
+                }
+            }
+        }
+
+        function setActiveDescendant(suggestions) {
+            const input = document.getElementById('adresse');
+            const activeSuggestion = suggestions[activeIndex];
+
+            suggestions.forEach((item, index) => {
+                item.setAttribute('aria-selected', index === activeIndex);
+            });
+
+            if (activeSuggestion) {
+                input.setAttribute('aria-activedescendant', activeSuggestion.id);
+            } else {
+                input.removeAttribute('aria-activedescendant');
+            }
+        }
+
+        function selectAddress(index) {
+            const input = document.getElementById('adresse');
+            const suggestionsElement = document.getElementById('suggestions');
+            const addressDetailsElement = document.getElementById('address-details');
+
+            // Récupère l'adresse sélectionnée
+            const selectedAddress = currentAddresses[index].properties;
+
+            // Affiche l'adresse dans le champ
+            input.value = selectedAddress.label;
+
+            // Affiche les détails de l'adresse en dessous
+            addressDetailsElement.innerHTML = `<ul><li>Numéro : ${selectedAddress.housenumber}</li>
+            <li>Voie : ${selectedAddress.street}</li>
+            <li>Code postal : ${selectedAddress.postcode}</li>
+            <li>Code INSEE : ${selectedAddress.citycode}</li>
+            <li>Ville : ${selectedAddress.city}</li></ul>`;
+
+            // Rendre visible la section des détails
+            addressDetailsElement.classList.remove('fr-hidden');
+
+            // Masque la liste des suggestions après sélection d'un item
+            suggestionsElement.innerHTML = '';
+            suggestionsElement.classList.add('fr-hidden');
+        }
+    </script>
+    <script src="
+https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12/dist/dsfr.module.min.js
+"></script>
+
+</body>
+
+</html>
