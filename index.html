@@ -54,7 +54,7 @@
                         type="text" class="fr-input" id="adresse" name="adresse" autocomplete="off"
                         aria-activedescendant="" oninput="getAdresseSuggestions(this.value)"
                         onkeydown="handleKeyDown(event)" />
-                    <ul role="listbox" class="fr-hidden fr-menu__list" id="suggestions"></ul>
+                    <ul role="listbox" class="fr-hidden fr-menu__list" id="suggestions" aria-label="Suggestions d'adresses postales"></ul>
                     <h2 class="fr-sr-only">Résultat : </h2>
                     <div id="address-details" class="address-details fr-mt-3w"></div>
                 </form>
@@ -81,7 +81,7 @@
                 return;
             }
 
-            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=7"`);
+            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5"`);
             const data = await response.json();
 
             currentAddresses = data.features; // Stocke les adresses récupérées
