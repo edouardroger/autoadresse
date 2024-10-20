@@ -60,9 +60,9 @@
                     </div>
                 </form>
             </section>
-            <section class="fr-col-12 fr-col-md-5 fr-col-lg-5 fr-col-offset-lg-2">
+            <section class="fr-col-12 fr-col-md-5 fr-col-lg-4 fr-col-offset-lg-2">
                 <h2 class="fr-sr-only">Résultat : </h2>
-                <div id="address-details" class="address-details"></div>
+                <div id="address-details"></div>
             </section>
         </div>
     </main>
@@ -171,11 +171,11 @@
             input.value = selectedAddress.label;
 
             // Affiche les détails de l'adresse en dessous
-            addressDetailsElement.innerHTML = `<ul><li>Numéro : ${selectedAddress.housenumber || ''}</li>
+            addressDetailsElement.innerHTML = `<div class="fr-card"><div class="fr-card__body"><div class="fr-card__content"><ul class="fr-card__desc"><li>Numéro : ${selectedAddress.housenumber || ''}</li>
             <li>Voie : ${selectedAddress.street || ''}</li>
             <li>Code postal : ${selectedAddress.postcode || ''}</li>
             <li>Code INSEE : ${selectedAddress.citycode || ''}</li>
-            <li>Ville : ${selectedAddress.city || ''}</li></ul>`;
+            <li>Ville : ${selectedAddress.city || ''}</li></ul></div></div></div>`;
 
             // Rendre visible la section des détails
             addressDetailsElement.classList.add('fr-collapse--expanded');
