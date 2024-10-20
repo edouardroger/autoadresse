@@ -10,15 +10,15 @@
     https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12/dist/dsfr.min.css
     " rel="stylesheet">
     <style>
-        #suggestions {
-            box-shadow: var(--overlap-shadow);
-            pointer-events: none;
-            position: absolute;
-        }
-
         #suggestions li[aria-selected="true"],
         #suggestions li:hover {
             background-color: var(--background-open-blue-france);
+        }
+
+        @media (min-width:62em) {
+            .fr-menu__combobox {
+                position:relative;
+            }
         }
     </style>
 </head>
@@ -54,7 +54,10 @@
                         type="text" class="fr-input" id="adresse" name="adresse" autocomplete="off"
                         aria-activedescendant="" oninput="getAdresseSuggestions(this.value)"
                         onkeydown="handleKeyDown(event)" />
-                    <ul role="listbox" class="fr-hidden fr-menu__list" id="suggestions" aria-label="Suggestions d'adresses postales"></ul>
+                    <div class="fr-collapse fr-menu fr-menu__combobox" id="suggestions">
+                        <ul role="listbox" class="fr-menu__list" 
+                            aria-label="Suggestions d'adresses postales"></ul>
+                    </div>
                     <h2 class="fr-sr-only">Résultat : </h2>
                     <div id="address-details" class="address-details fr-mt-3w"></div>
                 </form>
@@ -77,7 +80,7 @@
             if (!regex.test(query) || query.length < 3) { // Commence la recherche après saisie d'au moins 3 caractères et d'une espace suivie d'un caractère
                 suggestionsElement.innerHTML = '';
                 combobox.setAttribute('aria-expanded', 'false');
-                suggestionsElement.classList.add('fr-hidden');
+                suggestionsElement.classList.remove('fr-collapse--expanded');
                 return;
             }
 
@@ -86,10 +89,12 @@
 
             currentAddresses = data.features; // Stocke les adresses récupérées
 
-            suggestionsElement.innerHTML = ''; // Vider les suggestions précédentes
-            activeIndex = -1; // Reset de l'index actif
+            suggestionsElement.innerHTML = ''; // Vide les suggestions précédentes
+            activeIndex = -1; // RàZ de l'index actif
 
             if (data && data.features.length > 0) {
+                const ul = document.createElement('ul');
+                ul.classList.add('fr-menu__list')
                 data.features.forEach((feature, index) => {
                     const li = document.createElement('li');
                     li.classList.add('fr-nav__link')
@@ -99,15 +104,16 @@
                     li.onclick = function () {
                         selectAddress(index);
                     };
-                    suggestionsElement.appendChild(li);
+                    ul.appendChild(li);
                 });
+                suggestionsElement.append(ul)
 
                 // Affiche la liste de suggestions
                 combobox.setAttribute('aria-expanded', 'true');
-                suggestionsElement.classList.remove('fr-hidden');
+                suggestionsElement.classList.add('fr-collapse--expanded');
             } else {
                 combobox.setAttribute('aria-expanded', 'false');
-                suggestionsElement.classList.add('fr-hidden');
+                suggestionsElement.classList.remove('fr-collapse--expanded');
             }
         }
 
@@ -133,7 +139,7 @@
                 } else if (event.key === 'Escape') {
                     // Fermer la liste sur Échappement
                     suggestionsElement.innerHTML = '';
-                    suggestionsElement.classList.add('fr-hidden');
+                    suggestionsElement.classList.remove('fr-collapse--expanded');
                     activeIndex = -1;
                 }
             }
@@ -166,18 +172,18 @@
             input.value = selectedAddress.label;
 
             // Affiche les détails de l'adresse en dessous
-            addressDetailsElement.innerHTML = `<ul><li>Numéro : ${selectedAddress.housenumber}</li>
-            <li>Voie : ${selectedAddress.street}</li>
-            <li>Code postal : ${selectedAddress.postcode}</li>
-            <li>Code INSEE : ${selectedAddress.citycode}</li>
-            <li>Ville : ${selectedAddress.city}</li></ul>`;
+            addressDetailsElement.innerHTML = `<ul><li>Numéro : ${selectedAddress.housenumber || ''}</li>
+            <li>Voie : ${selectedAddress.street || ''}</li>
+            <li>Code postal : ${selectedAddress.postcode || ''}</li>
+            <li>Code INSEE : ${selectedAddress.citycode || ''}</li>
+            <li>Ville : ${selectedAddress.city || ''}</li></ul>`;
 
             // Rendre visible la section des détails
-            addressDetailsElement.classList.remove('fr-hidden');
+            addressDetailsElement.classList.add('fr-collapse--expanded');
 
             // Masque la liste des suggestions après sélection d'un item
             suggestionsElement.innerHTML = '';
-            suggestionsElement.classList.add('fr-hidden');
+            suggestionsElement.classList.remove('fr-collapse--expanded');
         }
     </script>
     <script src="
