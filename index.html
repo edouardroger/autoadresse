@@ -17,7 +17,7 @@
 
         @media (min-width:62em) {
             .fr-menu__combobox {
-                position:relative;
+                position: relative;
             }
         }
     </style>
@@ -45,8 +45,8 @@
         </div>
     </header>
     <main class="fr-container">
-        <div class="fr-grid-row fr-grid-row--gutters">
-            <section class="fr-col-12 fr-col-md-7 fr-col-lg-6 fr-mt-3w">
+        <div class="fr-grid-row fr-grid-row--gutters fr-mt-3w fr-grid-row--top">
+            <section class="fr-col-12 fr-col-md-7 fr-col-lg-5">
                 <h1 class="fr-h3">Autocomplétion d'adresse postale</h1>
                 <form id="adresse_form">
                     <label for="adresse" class="fr-label">Votre adresse postale</label>
@@ -54,13 +54,15 @@
                         type="text" class="fr-input" id="adresse" name="adresse" autocomplete="off"
                         aria-activedescendant="" oninput="getAdresseSuggestions(this.value)"
                         onkeydown="handleKeyDown(event)" />
-                    <div class="fr-collapse fr-menu fr-menu__combobox" id="suggestions">
-                        <ul role="listbox" class="fr-menu__list" 
-                            aria-label="Suggestions d'adresses postales"></ul>
+                    <div class="fr-collapse fr-menu fr-menu__combobox">
+                        <ul role="listbox" class="fr-menu__list" aria-label="Suggestions d'adresses postales"
+                            id="suggestions"></ul>
                     </div>
-                    <h2 class="fr-sr-only">Résultat : </h2>
-                    <div id="address-details" class="address-details fr-mt-3w"></div>
                 </form>
+            </section>
+            <section class="fr-col-12 fr-col-md-5 fr-col-lg-5 fr-col-offset-lg-2">
+                <h2 class="fr-sr-only">Résultat : </h2>
+                <div id="address-details" class="address-details"></div>
             </section>
         </div>
     </main>
@@ -78,9 +80,9 @@
             const regex = /\S+\s+\S+/;
 
             if (!regex.test(query) || query.length < 3) { // Commence la recherche après saisie d'au moins 3 caractères et d'une espace suivie d'un caractère
-                suggestionsElement.innerHTML = '';
+                suggestionsElement.replaceChildren();
                 combobox.setAttribute('aria-expanded', 'false');
-                suggestionsElement.classList.remove('fr-collapse--expanded');
+                suggestionsElement.parentNode.classList.remove('fr-collapse--expanded');
                 return;
             }
 
@@ -89,12 +91,10 @@
 
             currentAddresses = data.features; // Stocke les adresses récupérées
 
-            suggestionsElement.innerHTML = ''; // Vide les suggestions précédentes
+            suggestionsElement.replaceChildren(); // Vide les suggestions précédentes
             activeIndex = -1; // RàZ de l'index actif
 
             if (data && data.features.length > 0) {
-                const ul = document.createElement('ul');
-                ul.classList.add('fr-menu__list')
                 data.features.forEach((feature, index) => {
                     const li = document.createElement('li');
                     li.classList.add('fr-nav__link')
@@ -104,16 +104,15 @@
                     li.onclick = function () {
                         selectAddress(index);
                     };
-                    ul.appendChild(li);
+                    suggestionsElement.appendChild(li);
                 });
-                suggestionsElement.append(ul)
 
                 // Affiche la liste de suggestions
                 combobox.setAttribute('aria-expanded', 'true');
-                suggestionsElement.classList.add('fr-collapse--expanded');
+                suggestionsElement.parentElement.classList.add('fr-collapse--expanded');
             } else {
                 combobox.setAttribute('aria-expanded', 'false');
-                suggestionsElement.classList.remove('fr-collapse--expanded');
+                suggestionsElement.parentElement.classList.remove('fr-collapse--expanded');
             }
         }
 
@@ -138,8 +137,8 @@
                     }
                 } else if (event.key === 'Escape') {
                     // Fermer la liste sur Échappement
-                    suggestionsElement.innerHTML = '';
-                    suggestionsElement.classList.remove('fr-collapse--expanded');
+                    suggestionsElement.replaceChildren();
+                    suggestionsElement.parentNode.classList.remove('fr-collapse--expanded');
                     activeIndex = -1;
                 }
             }
@@ -182,8 +181,8 @@
             addressDetailsElement.classList.add('fr-collapse--expanded');
 
             // Masque la liste des suggestions après sélection d'un item
-            suggestionsElement.innerHTML = '';
-            suggestionsElement.classList.remove('fr-collapse--expanded');
+            suggestionsElement.replaceChildren();
+            suggestionsElement.parentNode.classList.remove('fr-collapse--expanded');
         }
     </script>
     <script src="
